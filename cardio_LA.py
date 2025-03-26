@@ -9,6 +9,7 @@ import statsmodels.api as sm
 from statsmodels.formula.api import ols 
 from sklearn.linear_model import LinearRegression
 
+
 big_health = pandas.read_csv("/Users/zebbogue/Documents/GitHub/DIDA-425-Project/BigCitiesHealth-1.csv")
 
 big_health.shape
@@ -62,12 +63,12 @@ plt.show()
 #PLOTTING RESIDUALS TO DETERMINE VALIDITY OF LINEAR REGRESSION
 #https://www.geeksforgeeks.org/how-to-create-a-residual-plot-in-python/
 
-linear_model = ols('value ~ year', data=cardio_deaths_la_grouped).fit() 
-print(linear_model.summary())
+linear_model_cvd = ols('value ~ year', data=cardio_deaths_la_grouped).fit() 
+print(linear_model_cvd.summary())
 
-fig = plt.figure(figsize=(14, 8))
+fig_cvd = plt.figure(figsize=(14, 8))
 
-fig = sm.graphics.plot_regress_exog(linear_model, 'year', fig=fig) 
+fig_cvd = sm.graphics.plot_regress_exog(linear_model_cvd, 'year', fig=fig_cvd) 
 plt.show()
 
 #BASIC REGRESSION LINE FOR CARDIOVASCULAR DISEASE DEATHS
@@ -82,11 +83,11 @@ plt.show()
 
 #LAG PLOT
 cardio_deaths_la_grouped['Lag_1'] = cardio_deaths_la_grouped['value'].shift(1)
-df = cardio_deaths_la_grouped.reindex(columns=['value', 'Lag_1'])
-df.head()
+df_cvd = cardio_deaths_la_grouped.reindex(columns=['value', 'Lag_1'])
+df_cvd.head()
 
 fig, ax = plt.subplots()
-ax = sns.regplot(x='Lag_1', y='value', data=df, ci=None, scatter_kws=dict(color='0.25'))
+ax = sns.regplot(x='Lag_1', y='value', data=df_cvd, ci=None, scatter_kws=dict(color='0.25'))
 ax.set_aspect('equal')
 ax.set_title('Lag Plot of CVD deaths in LA (2010-2022)')
 plt.show()
@@ -94,14 +95,19 @@ plt.show()
 
 
 #FITTING A LINEAR REGRESSION MODEL
-X = cardio_deaths_la_grouped.loc[:, ['year']]  # features
-Y = cardio_deaths_la_grouped.loc[:, 'value']  # target
+#X = cardio_deaths_la_grouped.loc[:, ['year']]  # features
+#y = cardio_deaths_la_grouped.loc[:, 'value']  # target
+
+X, y = cardio_deaths_la_grouped[['year']], cardio_deaths_la_grouped.value
 
 #Training the model
-model = LinearRegression()
-model.fit(X, Y)
+model_cvd = LinearRegression()
+model_cvd.fit(X, y)
 
-y_pred = pandas.Series(model.predict(X), index=X.index)
+r_squared = model_cvd.score(X, y)
+print(r_squared) #R2 = 0.249 indicating a small relationship between time and CVD deaths (slight decrease since 2010)
+
+y_pred = pandas.Series(model_cvd.predict(X), index=X.index)
 
 plot_params = {
     'color': 'gray',         
@@ -111,7 +117,7 @@ plot_params = {
     'figsize': (10,6)
     }
 
-ax = Y.plot(**plot_params)
+ax = y.plot(**plot_params)
 ax = y_pred.plot(ax=ax, linewidth=3)
 ax.set_title('Time Plot of CVD deaths in LA (2010-2022)')
 plt.show()
@@ -129,6 +135,68 @@ plt.xlabel('Year')
 plt.xticks([2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022])
 plt.title('Heart Disease Deaths in Los Angeles from 2010-2022')
 plt.ylim(150, 210)
+plt.show()
+
+#PLOTTING RESIDUALS TO DETERMINE VALIDITY OF LINEAR REGRESSION
+#https://www.geeksforgeeks.org/how-to-create-a-residual-plot-in-python/
+
+linear_model_hd = ols('value ~ year', data=heart_disease_la_grouped).fit() 
+print(linear_model_hd.summary())
+
+fig_hd = plt.figure(figsize=(14, 8))
+
+fig_hd = sm.graphics.plot_regress_exog(linear_model_hd, 'year', fig=fig_hd) 
+plt.show()
+
+#BASIC REGRESSION LINE FOR CARDIOVASCULAR DISEASE DEATHS
+#https://www.kaggle.com/code/ryanholbrook/linear-regression-with-time-series
+
+fig, ax = plt.subplots(figsize=(10,5))
+ax.plot('year', 'value', data=heart_disease_la_grouped, color='0.75')
+ax = sns.regplot(x='year', y='value', data=heart_disease_la_grouped, ci=None, scatter_kws=dict(color='0.25'))
+ax.set_title('Heart Disease Deaths in Los Angeles, CA from 2010-2022')
+ax.set_ylim(160,200)
+plt.show()
+
+#LAG PLOT
+heart_disease_la_grouped['Lag_1'] = heart_disease_la_grouped['value'].shift(1)
+df_hd = heart_disease_la_grouped.reindex(columns=['value', 'Lag_1'])
+df_hd.head()
+
+fig, ax = plt.subplots()
+ax = sns.regplot(x='Lag_1', y='value', data=df_hd, ci=None, scatter_kws=dict(color='0.25'))
+ax.set_aspect('equal')
+ax.set_title('Lag Plot of Heart Disease Deaths in LA (2010-2022)')
+plt.show()
+#lag plot shows a relationship between values and lag values indicating 
+
+
+#FITTING A LINEAR REGRESSION MODEL
+#X = cardio_deaths_la_grouped.loc[:, ['year']]  # features
+#y = cardio_deaths_la_grouped.loc[:, 'value']  # target
+
+X, y = heart_disease_la_grouped[['year']], heart_disease_la_grouped.value
+
+#Training the model
+model_hd = LinearRegression()
+model_hd.fit(X, y)
+
+r_squared = model_hd.score(X, y)
+print(r_squared) #R2 = 0.6299 indicating a strong relationship between time and CVD deaths (slight decrease since 2010)
+
+y_pred = pandas.Series(model_hd.predict(X), index=X.index)
+
+plot_params = {
+    'color': 'gray',         
+    'marker': 'o',           
+    'linestyle': '-',        
+    'alpha': 0.7,
+    'figsize': (10,6)
+    }
+
+ax = y.plot(**plot_params)
+ax = y_pred.plot(ax=ax, linewidth=3)
+ax.set_title('Time Plot of Heart Disease Deaths in LA (2010-2022)')
 plt.show()
 
 #High Blood Pressure
